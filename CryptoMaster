@@ -1,0 +1,1097 @@
+ SafetechSM EncryptionandTokenization Supplemental Guide
+Published: November 13, 2018 Version: 3.2.0.0
+
+Safetech Encryption
+ Disclosure Statement
+This document contains information which is confidential and proprietary to Paymentech, LLC, Chase Paymentech Solutions and Chase Paymentech Europe Limited (collectively “Merchant Services”) and may only be used in relation to services and products provided by Merchant Services. Merchant Services is a marketing name for the Merchant Acquiring and Payment Processing business of JPMorgan Chase & Co. (“JPMorgan Chase”). This document contain information that is confidential and/or proprietary to Merchant Services and/or JPMorgan Chase and may not be copied, used or published, in whole or in part, for any purpose other than as expressly authorized by Merchant Services. Merchant Services makes no representations as to the legal, regulatory, tax or accounting implications or suitability for any particular business of the matters referred to in this document.
+All trademarks, trade names and service marks appearing herein are the property of their respective owners. © 2018 Paymentech, LLC. All Rights Reserved.
+© Paymentech, LLC. 2018 – All Rights Reserved Page 2 of 32 November 13, 2018
+
+Safetech Encryption
+ Contents
+What’s New or Changed in Version 3.2.0.0 ................................................................................................................. 5 Overview ....................................................................................................................................................................... 6 Benefits ..................................................................................................................................................................... 6 Industries .................................................................................................................................................................. 6 Merchant Environment and Setup Requirements ........................................................................................................ 6 BIN Exclusions.............................................................................................................................................................. 7 Merchant Considerations:......................................................................................................................................... 7 Updating the BIN Exclusions .................................................................................................................................... 7 Terminal Capture Considerations ................................................................................................................................. 7 Terminal Capture Requirements .............................................................................................................................. 8 Token-Only Request ................................................................................................................................................. 8 (TCS) Offline Processing .......................................................................................................................................... 9 Verifone Derived Keys .............................................................................................................................................. 9 Overview ................................................................................................................................................................... 9 Key Sync and Rotation ........................................................................................................................................... 10 Notes:...................................................................................................................................................................... 10 Supported Devices ................................................................................................................................................. 11 Command Events ....................................................................................................................................................... 11 Integrator Considerations ....................................................................................................................................... 12 Example use cases an Integrator would work through with both Verifone and Chase. ......................................... 12 Verifone IP Back Channel (IPBC)............................................................................................................................... 13 Overview ................................................................................................................................................................. 13 Mx8xx and Mx9xx devices......................................................................................................................................14 The IP Back Channel Network ............................................................................................................................... 14 Integrator Considerations ....................................................................................................................................... 14 Disabling Encryption ............................................................................................................................................... 15 Verifone Terminal Generated Keys ............................................................................................................................ 15 Overview ................................................................................................................................................................. 15 Standalone Devices – Vx520, Vx510-DC, and Vx680-3G ..................................................................................... 15 Integrated Device – Vx820 PIN pad ....................................................................................................................... 15 Best Practices.........................................................................................................................................................16 Semi-integrated devices – Vx520, Vx510-DC ........................................................................................................ 16 Key Sync and Rotation ........................................................................................................................................... 16
+© Paymentech, LLC. 2018 – All Rights Reserved Page 3 of 32 November 13, 2018
+
+Safetech Encryption
+ Verifone TGK/XPI Key Sync Process..................................................................................................................... 17 TGK Update Request and Response Message Formats ....................................................................................... 17 Disabling Encryption ............................................................................................................................................... 18
+Ingenico On-Guard ..................................................................................................................................................... 18 Merchant Environment and Setup Requirements .................................................................................................. 18 BIN Exclusions........................................................................................................................................................ 18 Integrator Considerations ....................................................................................................................................... 18 Testing and Certification Info .................................................................................................................................. 19 Best Practices.........................................................................................................................................................19 Disabling Encryption ............................................................................................................................................... 19 Telium Terminal configuration file contains four components: ............................................................................... 19 Encryption Output to Host....................................................................................................................................... 20
+MagTek Magnesafe .................................................................................................................................................... 20 Merchant Environment and Setup Requirements .................................................................................................. 20 BIN Exclusions........................................................................................................................................................ 20 Encryption Output to Host....................................................................................................................................... 20
+Safetech Tokenization ................................................................................................................................................ 21 Overview ................................................................................................................................................................. 21 Benefits ................................................................................................................................................................... 21
+Merchant Environment and Setup Requirements ...................................................................................................... 21 Safetech Tokenization Formats with Examples ..................................................................................................... 22 Applicable Message Types......................................................................................................................................... 23 Consumer Digital Payment Tokens ............................................................................................................................ 23 Token Only Requests ................................................................................................................................................. 23 Glossary of Relevant Terms ....................................................................................................................................... 23 Appendix A – Verifone IPBC Kmailman Configuration...............................................................................................26 Appendix B – Verifone Hierarchy Environment Variables .......................................................................................... 26 Appendix C – Verifone Semtek CDS Result Codes ................................................................................................... 27
+© Paymentech, LLC. 2018 – All Rights Reserved Page 4 of 32 November 13, 2018
+
+Safetech Encryption
+ What’s New or Changed in Version 3.2.0.0
+The following updates have been made to this version of the guide since version 3.1.5:
+• Completed annual recertification of document content (relevance and technical accuracy)
+• Updated copyright and publication dates.
+• Updated version number to new 4-digit requirement.
+• Replaced Change Log with this section.
+• Removed highlighting of text throughout document.
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 5 of 32
+
+Safetech Encryption
+ Overview
+Chase’s SafetechSM Encryption is a point-to-point encryption technology that protects the primary account number (PAN) on a payment card from the moment it is captured at the point of sale until it reaches the processor, with no need for the merchant or vendor to process, transmit, or store unprotected card account data. This process is referred to as PAN Encryption or End-to-End Encryption.
+Chase uses format-preserving encryption (FPE) technology to encrypt the card, PAN and discretionary data before it enters the merchant’s payment system and keeps it secure until it reaches Chase’s data center. This requires an encryption application to be installed on the merchant’s payment terminal and also requires Chase data centers to decrypt the card data for subsequent processing.
+The Safetech Encryption solution encrypts the available card data as follows:
+• The magnetic card track data is encrypted on all swiped card transactions. • The PAN is encrypted on each manually keyed transaction.
+• Encryption also occurs on Contactless (tap) and EMV Chip transactions.
+There is no distinguishable difference between clear text data and the encrypted data; therefore, data validity checks performed at the point-of-sale (POS) level (such as MOD 10 or LRC) should not be impacted.
+Benefits
+• Secures cardholder data for card-present transactions, including those that are swiped and manually keyed
+• May lower Payment Card Industry Data Security Standard (PCI DSS) compliance costs
+• Integrates with most POS systems, usually with minimal POS system impact and low disruption
+• Potentially reduces the risk of harm if/when a system breach occurs, since any encrypted data obtained is useless
+without decryption keys
+• Card format within Verifone is preserved and the first six digits and last four digits are unencrypted for proper
+routing and reporting.
+Industries
+Safetech Encryption is applicable to the card-present, retail industry only at this time. Merchants requiring tip or other authorization adjustments (as is common in the restaurant, lodging or auto rental industries) are not currently supported. Many of these industries are being evaluated for support in future enhancements and product releases.
+Merchant Environment and Setup Requirements
+The following are environment and setup requirements that the merchant must follow in order to use Safetech Encryption:
+• Retail card-present merchant environment
+• Host Capture (HCS) Processing (PNS-ISO or UTF)
+• Terminal Capture (TCS) Processing (PNS-ISO or UTF)
+• Merchants must settle transactions via one of the Chase Merchant Services back-end platforms. • Merchant provided list of third-party BIN ranges to be excluded from encryption (i.e. gift, loyalty) • Have appropriate device hardware
+o IPBC: Mx Series
+o TGK: Vx Series
+o MagTek supporting MagneSafe
+o Ingenico Telium II supporting On-Guard
+• For IPBC: Have a direct network connection from the PIN pad to Chase systems (MPLS, VPN, or similar)
+© Paymentech, LLC. 2018 – All Rights Reserved Page 6 of 32 November 13, 2018
+ 
+Safetech Encryption
+ • For TGK: Integration requires a certification to process E-Parms data in transaction messages and must also process key management transactions using the command BIN of 111111.
+• For Derived Key: PIN pad integration for encrypted transactions with host requires certification BIN Exclusions
+Once encryption is enabled, all cards are encrypted, regardless of issuer. Cards that meet ISO standards for magnetic track data (swiped), EMVco chip cards (inserted), Contactless (tapped), NFC (mobile), as well as card data that is manually keyed is encrypted before it is passed to the payment application for processing.
+In some scenarios, a card may not be encrypted. These include:
+• The card track is not in an ISO standard format. Some debit, gift card, and loyalty issuers may not be following the standard.
+• The card is expired.
+• The card was excluded from encryption within the BIN File.
+Merchant Considerations:
+• Are any cards being accepted that do not process through Chase?
+• Even though the merchant accepts non-ISO format gift/loyalty cards, is there a chance the cards are manually
+entered?
+Updating the BIN Exclusions
+• IPBC devices can be updated by creating a new BIN exclusion file, then assigning update jobs on VeriShield Key Management (VKM) to the appropriate devices, merchants, or domains. The devices connect to the Chase Decryption server during the Kmailman check (every 15 minutes) and then process the new BIN exclusions.
+• Verifone Terminal Generated Keys (TGK) and Verifone IP Back Channel (IPBC) standalone devices can be updated by creating a new BIN exclusion file, having it signed by Chase and then downloaded from the Chase VeriCentre.
+• Verifone Terminal Generated Keys (TGK) and Verifone IPBC integrated devices can be updated by creating a new BIN exclusion file, having it signed by Chase and pushed from the POS system to the PIN pad.
+• Verifone Derived Key integrated devices can be updated by creating a new BIN exclusion file, having it signed and then pushed from the POS system to the device.
+• Ingenico devices are loaded with a generic BIN exclusion list during injection.
+• Magtek devices do not use a BIN exclusion file.
+Terminal Capture Considerations
+In the Terminal Capture environment, only Sale/Auth Only transactions and reversals are performed online to the host. Return and Prior Sale transactions, as well as transaction adjustments, occur offline at the POS. In order to receive payment, the merchant must perform a Batch Release/Upload (deposit) to move the transactions from the POS device to the host for settlement. When end-to-end encryption is enabled, the encrypted PAN is included within a 300-byte encrypted payload for each transaction. Due to space considerations, the 300-byte payload should not be stored by the POS. The token takes the place of the encrypted payload. All Terminal Capture E2EE merchants must participate in Tokenization (excluding Chase Mobile Checkout (CMC) and Orbital Gateway merchants).
+© Paymentech, LLC. 2018 – All Rights Reserved Page 7 of 32 November 13, 2018
+  
+Safetech Encryption
+  Terminal Capture Requirements
+1. TCS Merchants using encryption and tokenization must perform a token-only request prior to processing and transmitting offline transactions such as returns and prior sales in a TCS batch file.
+2. A Safetech token cannot be requested in TCS Upload and TCS Batch (request will be ignored).
+If decryption fails during TCS upload, a detail error is logged for the transaction. If five or more transactions fail, the batch is suspended.
+3. As with encryption, there is a five transaction threshold for de-tokenization errors. If five or more errors occur, the batch is suspended.
+For transactions where a token cannot be returned in the response of a transaction request (setup issue or token server issue) the Chase card-present platform still attempts the transaction request, but responds with a token error in the T4. Merchants should perform a token-only request using the original account number.
+Token-Only Request
+The TCS Batch specification does not support encrypted transaction payloads; therefore, any offline prior authorizations, offline refunds, or store-and-forward transactions must obtain a token prior to submitting the batch.
+For this reason, TCS merchants using encryption and tokenization must perform a Safetech token-only request prior to processing and transmitting offline transactions, such as returns and prior sales, in a TCS batch file. The token-only message is supported in both the PNS ISO and UTF message specifications.
+Notes:
+1. Token-only requests do not authorize the card on the network.
+2. The request must be submitted with the following transaction codes:
+o “91” for credit cards o “92 for debit cards o “93” for EBT cards.
+3. The amount must be sent as 0.00.
+4. The token-only message tokenizes the account number submitted in the transaction.
+5. Merchants integrating to the TCS batch must have a token for all transactions submitted.
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 8 of 32
+
+Safetech Encryption
+ (TCS) Offline Processing
+The following table shows what offline scenarios and message types are supported for merchants that use the Verifone Encryption Solution. In the case of an offline or store-and-forward transaction where a token cannot be obtained, encrypted payloads may still be supported (see table below). This will requires the merchant to submit the 300-byte payload in the TCS upload message.
+*Please note the TCS Batch does NOT support encrypted payloads so a token must always be obtained prior to submission.
+  Spec
+   Token upload support
+   Encrypted offline payload support
+   Notes
+  PNS ISO TCS and HCS
+   Yes
+  Yes
+ • Offline transactions require full encrypted track data Bit 35/45 in the 1300 upload message.
+• All transaction types that do not fall into the offline scenarios should use the token in the upload message.
+   UTF 1.97 Terminal Capture System
+   Yes
+  Yes
+ • Swiped Verifone offline transactions require ET token (see UTF Token Guide for supported transaction types).
+• All transaction types that do not fall into the offline scenarios should use the token in the upload message.
+  TCS Batch Yes
+Verifone Derived Keys
+Overview
+• Only tokens can be submitted in the batch file. Encrypted payloads are not supported
+    This encryption solution uses symmetric derived keys that ensure the working and decryption keys can be dynamically derived per device. Card data is preserved during the encryption process, allowing merchants to seamlessly pass data without having to modify the message format or system infrastructure. Below are some of the key terms that help explain how derived key works.
+Term
+   Description
+   Location
+   POS Point of Sale
+MDK Master Derivation Key
+DDK Device Derivation Key
+VCL VeriShield Crypto Library (Verifone)
+Merchant Location
+Secured at Chase host
+Securely injected into terminal
+Created after the MDK is loaded into the device (stored on the device)
+         Device
+PIN pad or Integrated Terminal device
+On the PIN pad or integrated device Merchant Location
+Secured at chase host
+   FPE Format Preserving Encryption VSD VeriShield Decryption Service
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 9 of 32
+         
+Safetech Encryption
+ Key Sync and Rotation
+With derived key, only the Master Derivation Key (MDK) is loaded on the device. Once the MDK is loaded, 90 DDKs are derived and the MDK is securely deleted and points to the first DDK. The DDK is then combined with static information from the device and variable information from the transaction to create the actual Data Encryption Key (DEK), which results in unique keys per device.
+ Notes:
+1. Verifone Derived Key is available to U.S. merchants.
+2. Merchants must settle transactions via one of the Chase Merchant Services back-end platforms.
+3. IP back channel, derived key or TGK encryption packages cannot be set up on the same Client/Division.
+4. A Chase project manager should be assigned to large merchant implementations.
+5. Multi-merchant configured devices are not supported.
+6. Merchants must be certified to process either PNS ISO or UTF as HCS or TCS.
+7. Integrators should reach out to Technical.Implementations@chase.com to obtain testing and certification information.
+8. Even if the Integrator is PNS ISO- or UTF-certified, adding the E-Parms (PE Token) requires a certification to validate proper registration and key sync capability.
+ © Paymentech, LLC. 2018 – All Rights Reserved Page 10 of 32 November 13, 2018
+
+Safetech Encryption
+ 9. Test devices should be ordered through a Chase Relationship manager unless purchasing directly from Verifone.
+10. Query the device status using the Verifone VCL API to regularly confirm encryption is enabled.
+11. Do not initiate or allow a key advance with an open batch (online or offline).
+12. Enable a method for merchants to initiate the Key Sync command process to manage key rotation as required by QSA.
+13. The MSR swipe on the register must be disabled to avoid processing clear card transactions.
+Supported Devices
+• VX-Series • MX-Series • E-series
+Command Events
+Registration and Key Advance Messages
+Device Registration refers to the process of enabling encryption on the device and registering the device within the Chase environment. The encrypted PAN of the registration event is 15 digits and the command BIN begins with 111111. Key registration events and key advance requests follow the same message format, but return different result codes upon successful completion. To initiate a command event, the ECR/POS integrates with Verifone’s API and enables the ability to generate and send the command to the Chase host.
+Note: A 30-second delay should be added after command events to ensure replication on the CHASE host has been completed.
+Request Message
+1. Command Events must be formatted as credit card authorization-only transactions: a. UTF 1.97 – Transaction Code 2
+b. PNS ISO – 1100 Message, Bit 3 = 009100
+2. The first six digits of the Cardholder Account Number (BIN) must be sent as ‘111111’. 3. The PAN Encryption indicator must be present in the message:
+a. UTF 1.97 – PE Token
+b. PNS ISO – Bit 62, Subtag ‘P4’
+4. POS/VAR Capabilities Data must be submitted:
+a. Sub-element P12 must be submitted with a hex value of ’80’ to indicate Semtek PAN Encryption.
+© Paymentech, LLC. 2018 – All Rights Reserved Page 11 of 32 November 13, 2018
+
+Safetech Encryption
+ Response Message
+1. Response message is format:
+a. UTF 1.97 – See ‘Key Registration’ in the UTF 1.97 HCS Main Specification b. PNS ISO – See ‘Key Update Request Process’ in the PNS ISO Specification
+• Host responds with a 1510 message
+2. The encryption response code is included in the Host response:
+a. UTF 1.97 – SR Token
+• Full list of CDS result codes are in the (UTF 1.97 Token Reference Guide)
+• Semtek 909=Successful Key advance
+• Semtek 905=Successful registration
+b. PNS ISO – Bit 48, Subtag ‘S9’
+• Full list of Semtek result codes are in the (PNS ISO Specification, Appendix:A “CDS Result Codes”)
+• Semtek 909=Successful Key advance
+• Semtek 905=Successful registration
+Integrator Considerations
+Verifone’s VCL API supports several administrative APIs to be used by payment applications. For questions please reach out to your Verifone technical representative.
+• Device registration
+• Re-registration for device movement • Advance DDK for key advance
+• BIN table or settings file update
+Example use cases an Integrator would work through with both Verifone and Chase. New device installed and encryption must be turned on
+1. A user initiates the administration key on the ECR/POS, which notifies the device payment application to initiate a registration function in VCL.
+2. Device Payment Application initiates a registration function in VCL, which causes VCL to obtain the derivation material needed to support key management and package it up into what looks like an authorization request
+3. VCL performs the registration function, turn encryption on and generates a Command Response.
+4. Device Application retrieves the Command Response
+5. ECR/POS obtains the Command Response from the Payment Application and sends it up through the normal authorization path.
+6. Device is now registered with the VSD server on the backend and ready to begin encrypting transactions.
+Device Change
+1. The steps outlined in Use Case 1 could be used to simply generate a new registration event, or additional intelligence could be built into the ECR/POS as follows:
+© Paymentech, LLC. 2018 – All Rights Reserved Page 12 of 32 November 13, 2018
+
+Safetech Encryption
+ 2. ECR/POS software changes are implemented to obtain and store the derivation material used by the device (e.g. serial number) and monitor changes during daily startup.
+3. When changes are detected, the ECR/POS initiates administration mode which notifies the device payment application to initiate a registration function in VCL.
+4. The Device Payment Application initiates a Registration function in VCL.
+5. VCL performs the registration function and generates a Command Response.
+6. Device Application retrieves the Command Response.
+7. ECR/POS obtains the Command Response from the Payment Application and sends it up through the normal authorization path.
+8. Device is now re-registered with the VSD server on the backend and can continue encrypting transactions.
+Settings Change
+1. ECR/POS software changes are implemented to be able to initiate specific functions in VCL through the Device Payment Application.
+2. When the Merchant wants to Advance the DDK, the ECR/POS administration option for the function
+3. is submitted and the Device Application is notified to initiate function in VCL.
+4. Device Payment Application initiates the function in VCL.
+5. VCL performs the function and generates a Command Response.
+6. Device Payment Application retrieves the Command Response.
+7. ECR/POS obtains the Command Response and sends it up through the normal authorization path.
+8. Physical device and virtual device are now in sync with respect to which key to use for
+9. decryption/derivation and/or which BINs to exclude from encryption
+Verifone IP Back Channel (IPBC)
+Overview
+This encryption solution is sometimes referred to as “Key Pull” key management. It is facilitated through a Verifone Mx8xx or Mx9xx series PIN pad (integrated multi-lane device). There are no transaction message-level indicators related to the encryption and the integration system does not handle any of the key management traffic. Instead, each Mx device connects directly to the Chase Key Management Service through a dedicated TCP/IP connection (Frame, VPN or MPLS).
+After registration and setup, the device “polls” the Key Management Server at pre-determined intervals to “pull” new key information from the server. The IP Back Channel solution is only available to U.S. Merchants.
+Notes and Considerations
+• IPBC is available to U.S. Retail Merchants only.
+• All IPBC setups are handled as a custom setup.
+• IPBC and TGK packages cannot be setup on the same Client/Division.
+• Merchants must settle transactions via one of the Chase Merchant Services back-end platforms.
+• For new IPBC merchants, an implementation project manager from Verifone and one from Chase (MIT) should be
+involved. Typical implementations can take 6-12 weeks. (Longer if a full Class B certification is needed)
+• Devices should be set to poll every 15 minutes or more depending on network conditions. Consult with a Chase
+network administrator to determine network needs based on number of devices and network volume.
+© Paymentech, LLC. 2018 – All Rights Reserved Page 13 of 32 November 13, 2018
+
+Safetech Encryption
+ Mx8xx and Mx9xx devices
+The multi-lane Mx devices must be integrated to a certified middleware or POS system and be updated with:
+• Verifone Kmailman – Manages the IPBC traffic, key sync etc. • Verifone VCL – Encryption firmware
+• Chase Encryption Package – Keys and BIN exclusions
+• IP enabled Mx cables =
+The IP Back Channel Network
+• Kmailman communicates to the Chase decryption server and handles device registration, key sync requests, and BIN updates.
+• Jobs can be scheduled on the Chase decryption server to perform the following tasks:
+o Obtain a device status
+o Stop/re-start encryption
+o Perform a key sync
+o Update the BIN exclusions
+o Merchants need to have their dedicated private connection (MPLS/VPN) to Chase set up
+ IP address(es) and port numbers are supplied by Chase
+ Note: Authorization traffic still uses the existing connection to Chase.
+• The Kmailman application is a background application that checks in with the Chase decryption server. This
+check contains ~220 bytes of data.
+• If the IP back channel connection is lost or down, transaction processing continues without interruption. The
+device continues to attempt the connection at each polling interval.
+Integrator Considerations
+• Integrate the POS to the Mx PIN pad device, typically using Verifone FormAgent application on the Mx.
+• Set the environment variables on the PIN pad to properly register the device to Chase. The environment
+variables map the Auth IDs to the Chase Decryption Server keys.
+• Send the key sync command to the Mx PIN pad – Also done by FormAgent upon updating the environment
+variables.
+• Must be certified to process either PNS ISO or UTF as a HCS environment. Integrators should reach out to
+Technical.Implementations@chase.com to obtain testing info
+Testing and Certification Info
+• Must be certified to process either PNS ISO or UTF as a HCS environment.
+o Even if the Integrator is PNS ISO or UTF certified, adding IPBC requires a supplemental certification
+to validate proper registration and key sync capability.
+• Test devices should be ordered through Verifone and injected with the test keys (referred to as SQA01 Keys
+at Verifone).
+o Devices with production keys cannot be used for testing. o Devices with test keys cannot be used in production.
+• IPBC registration and Chase Merchant Services card-present host testing values are provided by the IRM Certification analyst.
+ Best Practices
+• Disable all card entry on the POS, including manual entry.
+• Query the device status and confirm encryption regularly; do not allow unencrypted processing. • Do not process store-and-forward or offline transactions.
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 14 of 32
+
+Safetech Encryption
+ • Do not initiate or allow a key sync with an open batch (online or offline).
+• Force a registration and key sync if a PIN pad is being replaced, or moved between POS lanes before any
+transactions are attempted.
+Key Sync and Rotation
+• FormAgent automatically performs a device registration and key sync when a change to the environment variables is detected.
+• The PROV Key (for performing key syncs) is unique per merchant/client.
+• The PAN key is unique per merchant number. Rotation requires a coordinated job setup on the Chase IPBC
+system and must be setup manually for each merchant number.
+• The discretionary key is unique per device. Rotation requires a coordinated job setup on the Chase IPBC system
+and can be done across the domain/client base.
+• Rotation of the keys is required every three years. Annual key rotation is considered a best practice.
+Disabling Encryption
+Chase can setup an IPBC job to disable (or re-enable) encryption on one or all devices in a domain/client base.
+Verifone Terminal Generated Keys
+Overview
+Terminal Generated Key (TGK) encryption solution is sometimes referred to as “key push” key management. It is facilitated through the Vx820 PIN pad or a standalone device (Vx510, Vx520, or Vx680 3G). Transaction message- level indicators (E-Parms – PE Token) must be included in all transactions and the device uses existing communication paths for transaction processing to perform key management functions. Integration to a POS system is available using the Vx820 PIN pad.
+• TGK is available to both U.S. and Canadian retail merchants.
+• Merchants must settle transactions via one of the Chase Merchant Services back-end platforms.
+• IPBC and TGK packages cannot both be set up on the same client/division.
+• A Chase project manager should be assigned for large merchant implementations.
+• Multi-merchant configured devices are not supported
+• A 30-second delay should be added after command events to ensure replication on the Chase host has been
+completed.
+Standalone Devices – Vx520, Vx510-DC, and Vx680-3G
+The standalone Vx devices need to be Chase-signed and downloaded with:
+• Verifone EMA† – Manages the device updates and key rotations. EMA performs automated key rotations annually by default. Rotations can also be done manually.
+• Verifone TGK† – Application that performs key generation.
+• Verifone XEPH† – Current Chase Class A SoftPay HCS application.
+• Verifone VCL‡ – Encryption firmware.
+• Chase Encryption Package‡ – Keys and BIN exclusions.
+Integrated Device – Vx820 PIN pad
+The Vx820 PP device needs to be Chase igned and be downloaded with: • Verifone TGK‡ – Application that performs key generation.
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 15 of 32
+
+Safetech Encryption
+ • Verifone XPI‡ – Current Vx PIN pad Integration Software.
+• Verifone VCL‡ – Encryption firmware.
+• Chase Encryption Package‡ – Keys and BIN exclusions.
+• Integrator needs to process TGK command transactions... BIN 111111.
+• Integrator needs to be certified for E-Parms (PE Token) data within Auth messages (*see UTF or PNS-ISO
+specifications).
+Testing and Certification Info
+• Must be certified to process either PNS ISO or UTF as a HCS environment.
+o Integrators should reach out to Technical.Implementations@chase.com to obtain testing and
+certification information.
+o Even if the Integrator is PNS ISO or UTF certified, adding the E-Parms (PE Token) requires a
+certification to validate proper registration and key sync capability.
+• Test devices should be ordered through Verifone, TASQ, or Maxwell and injected with test keys.
+o Devices with production keys cannot be used for testing. o Devices with test keys cannot be used in production.
+• TGK and Chase Merchant Services card-present host testing values are provided by the certification analyst. Best Practices
+• Disable all card entry on the POS including, manual entry.
+• Query the device status and confirm encryption regularly; do not allow unencrypted processing.
+• Do not process store-and-forward or offline transactions.
+• Do not initiate or allow a key sync with an open batch (online or offline).
+• Force a TGK sync if a PIN pad is being replaced, or moved between POS lanes before any transactions are
+attempted.
+• Enable a method for Merchants to initiate the TGK Key Sync command process to manage key rotations annually
+to all devices.
+Semi-integrated devices – Vx520, Vx510-DC
+Semi-integrated Vx devices need to be Chase signed and be downloaded with:
+• Verifone EMA† – Manages the device updates and key rotations. EMA performs automated key rotations annually by default. Rotations can also be done manually.
+• Verifone TGK† – Application that performs key generation.
+• Verifone XEPH† – Current Chase Class A SoftPay application.
+• Verifone ECRi† – Interface application between POS system and Vx device.
+• Verifone VCL‡ – Encryption firmware.
+• Chase Encryption Package‡ – Keys and BIN exclusions.
+Note: The semi-integrated ECRi solution is limited to a basic set of command functions that can be sent from the POS system (sale, refund, etc) *See the ECRi Integration Guide on Developer Center for more details.
+†- Downloaded via Chase VeriCentre
+‡ - Injection performed at TASQ or Verifone
+Key Sync and Rotation
+• On stand-alone devices, EMA automatically performs a device registration and key sync upon first boot-up when keys are first injected.
+© Paymentech, LLC. 2018 – All Rights Reserved Page 16 of 32 November 13, 2018
+ 
+Safetech Encryption
+ • The PROV Key (for performing Key Sync’s) is unique per merchant/client.
+• The PAN Key is unique per Merchant number.Rotation is managed by an EMA Parameter on stand-alone devices
+(monthly/quarterly/annually).
+• The Discretionary Key is unique per device. Rotation is managed by an EMA Parameter on stand-alone devices
+(monthly/quarterly/annually).
+• Rotation of the Keys is required every three years. Annual key rotation is considered a best practice.
+Verifone TGK/XPI Key Sync Process
+1. The controller triggers the key event and sends the E04 command to the XPI.
+2. The XPI communicates with the VCL/TGK module to get new key material. The VCL/TGK Module generates new PAN and discretionary keys.
+3. The XPI passes all three keys back to the controller.
+4. The controller creates and sends the first authorization request with the first key part to the Chase host.
+5. The host responds to the controller with a batch inquiry response. The controller interrogates the encryption response code to determine the result. If successful, the response = 941.
+6. The controller sends the next authorization request with the second key part to the Chase Host.
+7. The host responds to the controller with a batch inquiry response. The controller interrogates the encryption response code to determine the result. If successful, the response = 942.
+8. The controller sends the next authorization request with the third key part to the Chase Host.
+9. The host responds to the controller with a batch inquiry response. The controller interrogates the encryption response code to determine the result. If successful, the response = 943.
+Note: It is up to the controller to manage the response received from the Chase host. If the key update is unsuccessful (response code = 940), the controller should respond with a new TGK update request until the key management task is successful.
+TGK Update Request and Response Message Formats
+The following request and response messages are required between the controller and the Chase Host. Integrators should use the Chase Technical Specifications, the VX 820 XPI specification and the Integrator XPI Handbook to make necessary changes to their payment application.
+Three requests and responses are required to complete the TGK Update Request. Once all three requests have been completed successfully, encryption is enabled and the new keys are in use.
+Request Message
+1. Key update requests must be formatted as credit card authorization-only transactions:
+a. UTF 1.97 – Transaction Code 2
+b. PNS ISO – 1100 Message, Bit 3 = 009100
+2. The first six digits of the Cardholder Account Number (BIN) must be sent as ‘111111’.
+3. The transaction sequence flag must be sent as ‘2’ for multi-part messages.
+4. The PAN Encryption indicator must be present in the message:
+a. UTF 1.97 – PE Token
+b. PNS ISO – Bit 62, Subtag ‘P4’
+5. POS/VAR Capabilities Data must be submitted:
+a. Sub element P12 must be submitted with a hex value of ’80’ to indicate Semtek PAN Encryption.
+Response Message
+1. TGK update response message is formatted as a batch inquiry response:
+a. UTF 1.97 – See ‘Terminal Generated Key Registration’ in the UTF 1.97 HCS Main Specification
+© Paymentech, LLC. 2018 – All Rights Reserved Page 17 of 32 November 13, 2018
+
+Safetech Encryption
+ b. PNS ISO – See ‘Key Update Request Process’ in the PNS ISO Specification 2. The encryption response code is included in the Host response:
+a. UTF 1.97 – SR Token
+b. PNS ISO – Bit 48, Subtag ‘S9’
+Disabling Encryption
+Chase can set up a VeriCentre file download that clears the key from the standalone Vx devices. Note: Encryption cannot be re-enabled once it has been disabled.
+Ingenico On-Guard
+This encryption solution is supported on the Ingencio iPP320 PIN pad (baseline version CPX 904 or later) or any other Telium 2 device that supports On-Guard. This implementation features 2 Key Triple DES DUKPT key management along with full card number, and/or Track 2 encryption via an algorithm that produces format-preserving encryption (FPE). All data is numeric and is the same length as standard Track 2 data. Message-level indicators are required for successful decryption of encrypted transactions.
+Merchant Environment and Setup Requirements
+• U.S.- or Canadian-based retail card-present merchant environment
+• Host Capture (HCS) Processing (PNS-ISO or UTF)
+• Process via the Chase Merchant Services card-present front-end platform.
+• Merchants must settle transactions via one of the Chase Merchant Services back-end platforms.
+• Transmit transactions through any supported communication method (TCP/IP, NetConnect or Dial).
+• Merchant provided list of third-party BIN ranges to be excluded from encryption (i.e. gift, loyalty) if needed • Have appropriate device hardware
+o iPP320 or any other Ingenico Telium 2 device that supports On-Guard
+o PIN pad must be loaded with the required software and injected with the E2EE DUKPT key o DUKPT Key Management for PAN encryption/decryption
+ Key rotations are not required in a DUKPT environment
+BIN Exclusions
+Once encryption is enabled, all cards regardless of the issuer are encrypted. Cards which meet ISO standards for magnetic track data (Swiped), EMVco chip cards (Inserted), Contactless (Tapped), NFC (Mobile), as well as manually keyed cards are encrypted before being passed to the payment application for processing.
+BIN Exclusion Management
+1. Chase provides a generic BIN Exclusion file that houses known ISO gift card BINs.
+BIN EXCLUSION File (E2EE2BIN) is separate from the SECURETXTPROMPT File.
+a. Merchant integrator has the ability add additional BIN ranges to this file.
+b. A project request is required to ensure that the new BIN ranges are captured, reviewed and finalized.
+I. Identify added BIN Ranges
+II. Ideniify card entry method on PED (chip, swiped, manual)
+2. Upon approval of the project, Chase creates a MAC value for each line that is modified in the file.
+3. Chase provides the MAC value upon completion of project.
+4. VAR is responsible for testing updated BIN Exclusion file to confirm BIN Exclusion does not impact merchant
+processing.
+Integrator Considerations
+• Integrate the POS to the IPP320 Pad device using Ingenico Telium CPX E2E Specification and other relevant Ingenico Telium Specifications. Contact your Ingenico representative to obtain these specifications.
+© Paymentech, LLC. 2018 – All Rights Reserved Page 18 of 32 November 13, 2018
+
+Safetech Encryption
+ • Utilize the E2EE Activate Command and CPX configuration settings to enable encryption. The E2EE configuration file “e2ecfg” is a Chase signed file and CPX only uses the validated version.
+• Certify to process either PNS ISO or UTF as a Host Capture (HCS) environment. Integrators should reach out to Technical.Implementations@chase.com to get testing and certification info
+• Confirm the CPX version is able to support Onguard Encryption.
+• Manage updates and distribution of the Chase signed BIN Exclusion file for merchants. The integrator is
+responsible for working with the merchant to identify whether the merchant requires: o BIN Exclusion as part of their encryption solution,
+o Additions to the standard BIN Exclusion file supplied by Chase.
+Testing and Certification Info
+• Certify to process either PNS ISO or UTF as a Host Capture (HCS) environment. Integrators should reach out to Technical.Implementations@chase.com to obtain testing and certification info.
+• Order testing devices through Ingenico and inject them with the Chase DUKPT Test Key (referred to as Chase Test DUKPT Key at Ingenico)
+o Production devices cannot be used for testing.
+o Test devices cannot be used in production.
+• Register the test PIN pad’s serial numbers with IRM.
+• Chase card-present host testing values are provided by the IRM Certification analyst.
+Best Practices
+• Disable all card entry on the POS including manual entry.
+• Query the device status and confirm encryption regularly; do not allow unencrypted processing.
+• Processing store-and-forward and offline transactions is not recommended when encryption is enabled. If
+performed, all fraud risk falls on the merchant.
+• Ensure encryption is enabled whenever a PIN pad is replaced or moved between POS lanes and before any
+transactions are processed.
+Disabling Encryption
+• The E2EE configuration file can be downloaded by switching the E2EE feature from disabled to enabled. The feature remembers being enabled such that downloading a configuration file to disable E2EE is ignored.
+• For some devices (e.g., iSMP family of devices), E2EE cannot be disabled. CPX displays the message "E2EE Error /E2EE Not Enabled" if the E2EE mode is set to disabled and CPX does not run.
+Merchant Considerations:
+• Are any cards being accepted that do not process through Chase?
+• Even though the merchant is accepting non-ISO format gift/loyalty cards, is there a chance they manually
+enter those cards?
+• By default, Chase excludes Petroleum and Private Label BINs listed in our Processing and Interchange
+  Guidelines document.
+Telium Terminal configuration file contains four components:
+1. E2EE mode
+• ‘2’ encryption mode enabled
+• ‘D’ encryption mode disabled
+2. Format Type - ‘B’ E2EE utilizing DUKPT key.
+3. Type of Key - ‘D’ E2EE DUKPT
+4. Key Number – ‘5’ specifies E2EE injected into slot 4 using Key Pattern 4
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 19 of 32
+
+Safetech Encryption
+ Encryption Output to Host
+The IngeCrypt module in the device provides output as a ‘raw’ KSN. This KSN must be passed, along with additional data to the PNS Host for decryption.
+Example of KSN and extended data in the payload: FFFF9876543210E000070114
+This extended data is appended to the KSN in a ‘custom field’, and passes information about the encryption parameters to the decryption appliance. Appending this information is optional if the default configuration parameters of the decryption appliance match the ones used in the terminal. The only instance where appending the data is mandatory is when padding digits have been generated when the standalone PAN is too short.
+MagTek Magnesafe
+This encryption solution is supported on any MagTek PINPad that supports MagneSafe. This implementation features 2 Key Triple DES DUKPT key management, along with full card number and/or Track encryption via an algorithm that uses format preserving encryption (FPE) or non-format preserving. The PNS host supports both methods; however, the method type must be identified in the incoming request. M1 is non-format preserving, and M2 is format preserving. All data is numeric and is the same length as a standard track. Message level indicators are required for successful decryption of encrypted transactions.
+Merchant Environment and Setup Requirements
+• U.S. based retail card-present merchant environment
+• Process in a card-present, retail environment through the Paymentech Network Services (PNS) front-end platform.
+• Host Capture (HCS) Processing (PNS-ISO or UTF)
+• Settlement to North American (NAP) or Global backend
+• Transmit transactions through any supported communication method (TCP/IP, NetConnect or Dial).
+• Have appropriate device hardware
+o MagTek uDynamo, DynaPro, DynaPro Mini or any other MagTek device supporting MagneSafe o PIN pad must be loaded with the required software and injected with the E2EE DUKPT key
+o DUKPT Key Management for PAN encryption/decryption
+ Key rotations are not required in a DUKPT environment
+BIN Exclusions
+No BIN exclusions are currently supported with MagneSafe devices.
+Encryption Output to Host
+The device provides output as a raw unformatted or format preserving. Below are examples of both.
+Non format preserving example (M1):
+KSN=9010010B2485A8000344
+Track1.Masked=%B6011020004005098^DISCOVER PREPAID/CPS TEST ^20120000000000000000? Track2.Masked=;6011020004005098=20120000000000000000? Track1.Encrypted=8D8CDC173FD06471174D33F305C7980053448A0C5B9EF3990871FCC552389C533797394D8 B2DCFCA3820461AEE2B608089E4F13DDDAF1F29CC2A80596156D245AE157E0EB03AEB9F Track2.Encrypted=CD7A29514DDD378E7B76C7D737513BDCDAE841A6AF9596731412549B7A7005AEFE8A972 5C23F932C
+Notes:
+1. Masked data is used to populate PNS ISO Bit 2 – Primary Account Number and Bits 35 – Track 2 Data and
+45 – Track 1 Data.
+2. Encrypted data is used to PNS ISO Bit 62, Subtag P4 – PAN Encryption.
+© Paymentech, LLC. 2018 – All Rights Reserved Page 20 of 32 November 13, 2018
+
+Safetech Encryption
+ Format Preserving example (M2):
+%B5490500066748828^SMITH/WILLIAM^101010100000000000000000000000000732001000?;5490500066748828 =10101010000073200100?
+Safetech Tokenization Overview
+To address cardholder data security, Chase offers the Safetech Tokenization solution on both the PNS and card-not- present platforms. The solution entails returning a token in the transaction response message in lieu of clear-text card data. By returning tokens to merchants, no cardholder data is passed in subsequent transactions as the token serves as a proxy for the original account number (see transaction flow below). Merchants can use tokens in lieu of clear card numbers in their internal systems as well.
+Safetech Tokenization can be used as a standalone solution for both PNS and card-not-present merchants. For added security, encryption can also be combined with Safetech Tokenization. For PNS merchants, any of the encryption products mentioned in the Safetech Encryption section can be paired with Safetech Tokenization. For card-not-present merchants, Safetech Page Encryption can be paired with Safetech Tokenization.
+Note: Safetech Page Encryption is not offered without Safetech Tokenization.
+Benefits
+• Reduces risk if a merchant’s system is breached
+• Potentially reduce your Payment Card Industry Data Security Standards (PCI DSS) compliance scope.
+• Secures card account data (chip, contactless, swiped, or manually keyed)
+• Integrates this solution with current Ingenico, Magtek, and Verifone terminals
+• Continues accepting payments as usual, with no change in the customer’s experience
+Merchant Environment and Setup Requirements
+PNS
+Safetech Tokenization is offered for all industry segments supported on the PNS platform for U.S. and Canadian merchants. Both PNS ISO and UTF message formats support Safetech Tokenization in HCS processing only on the following card types:
+• Visa
+© Paymentech, LLC. 2018 – All Rights Reserved Page 21 of 32 November 13, 2018
+ 
+Safetech Encryption
+ • Mastercard
+• American Express
+• Discover, Diners
+• JCB
+• FSA/IIAS
+• U.S. and Canadian Debit • International Maestro.
+Safetech Tokenization supports all transaction types where a Primary Account Number (PAN) is passed between a merchant and PNS, as long as it does not interfere with card brand requirements. Please refer to the PNS ISO or UTF specifications for a list of these transaction types.
+Merchants should consider what token format best fits their business needs prior to enrolling in Safetech Tokenization. For example, a merchant may need to preserve a portion of the PAN or may need the token to meet MOD10 checks. Safetech Tokenization offers 16 different token formats to choose from. Please speak with a Chase account representative to determine which token format best meets a merchant’s business needs.
+Safetech Tokenization Formats with Examples
+Note: The formats below have been upgraded to the new Secure Stateless Tokenization (SST2) format. Legacy token formats will remain valid for existing Chase merchants that are already configured for Safetech Tokenization. New Safetech Tokenization merchant implementations must use the new SST2 format.
+   PAN Digits to Preserve
+     Alpha Token Indicator
+   MOD 10 Checksum
+     SST2 Format (new)
+   Example Token
+     Example MOD 10
+ First 6 First 6 Last 4 None First 6 First 6 Last 4 None First 6 First 6 Last 4 None First 6 First 6 Last 4 None
+and Last 4
+and Last 4
+and Last 4
+and Last 4
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+None
+Alpha Token Alpha Token Alpha Token Alpha Token
+Ignore MOD 10 NI64 Ignore MOD 10 NI60 Ignore MOD 10 NI04 Ignore MOD 10 NI00 Preserve MOD 10 NP64 Preserve MOD 10 NP60 Preserve MOD 10 NP04 Preserve MOD 10 NP00 Change MOD 10 NC64 Change MOD 10 NC60 Change MOD 10 NC04 Change MOD 10 NC00 Ignore MOD 10 AI64 Ignore MOD 10 AI60 Ignore MOD 10 AI04 Ignore MOD 10 AI00
+5454541002111234 Fail/ignore 5454541002112001 Fail/ignore 1806551002111234 Fail/ignore 1806551002112001 Fail/ignore 5454541002801234 40 5454541002482001 40 1806551001011234 40 1806551004312001 40 5454541002981234 50 5454541019982001 50 1806551002671234 50 1806551008782001 50 5454541wrtp11234 Fail/ignore 5454541wrtp12001 Fail/ignore 1806551wrtp11234 Fail/ignore 1806551wrtp12001 Fail/ignore
+Page 22 of 32
+                                                                                                © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+
+Safetech Encryption
+ Applicable Message Types
+Safetech Token-Only request can only be submitted using the 1100 message type in HCS only. The Safetech Token will be included on the 1110 response.
+Refer to Chase UTF and PTI Specifcations for specific tokenization transaction codes.
+Consumer Digital Payment Tokens
+Merchants requesting Safetech Tokens for cards provisioned in digital wallets will receive different Safetech Tokens than for cards that are swiped, tapped, dipped, or manually entered on the terminal. Cards provisioned in a digital wallet receive a digital payment token by the wallet provider, known as a DPAN. Safetech Tokens are generated off of either the PAN or DPAN presented to the terminal, and results in different Safetech Tokens being generated for the same underlying FPAN
+Token Only Requests Best Practices
+• Verify that all merchant systems and processes can handle the selected token format. Once the token format has been selected and enabled at Chase the format cannot be changed.
+• Safetech Tokenization is enabled on the Chase host, but a tokens must be requested during an authorization or a token only request in order to receive a token in the response message.
+• If a token is requested but not received in original transaction, merchants should perform a token only request to receive a token.
+• A class B certification is required when implementing tokenization. Glossary of Relevant Terms
+  Acronym
+   Term
+   Detail
+ BDK
+BIN File
+CPX, UIA, RBA
+CTLS
+DPAN
+DA
+Triple DES
+DUKPT ECRi
+Base Derivation Key BIN Exclusion File Ingenico
+Contactless
+Digital Primary Account Number Decryption Appliance
+Cipher Algorithm
+Key Management Scheme Electronic Cash Register Interface
+Master key used in 3DES DUKPT
+File which lists all BIN ranges to NOT be encrypted.
+Ingenico PIN pad integration software that supports Encryption.
+OS Firmware running on the Vx device which manages an integrated contactless reader.
+Generic name for the decryption server stack. – See VSD
+Triple Data Encryption Stanard (DES Cipher applied 3 times)
+Derived Unique Key Per Transaction
+Application running on the Vx device which enables a POS system to send commands to the Softpay application
+Page 23 of 32
+                           © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+
+Safetech Encryption
+   Acronym
+   Term
+   Detail
+    EMA
+   Estate Management Application
+   EMA is the application running on the Vx device which drives the TGK application and triggers SoftPay to connect to the host.
+ FormAgent
+FPAN FPE
+HSM
+IngeCrypt / OnGuard
+IPBC KEK
+Kmailman
+MSR
+Mx Device
+Root Softpay Telium 2
+Mx PIN pad software
+Funding Primary Account Number Format Preserving Encryption
+Hardware Security Module Ingenico OnGuard
+IP Back Channel Key Encryption Key
+Application forIP Back Channel communication
+Mag Stripe Reader Multi-Lane PIN pad
+Root Key
+Stand alone countertop payment software (Vx)
+Telium 2 Devices
+(aka: semi-integration)
+Application used on a PIN pad to communicate to a connected a POS system.
+Generic term used to descript E2E encryption that does not require changing the Track data format on the card.
+Secure system which houses/protects encryption keys. Ingenico branded end to end encryption product.
+Mx Device management connection to the decryption server.
+Standard term to describe a key that is used to encrypt another key.
+Kmailman communicates over the back channel to the VMB interface and to the VKM interface.
+Card reading device on a PIN pad or terminal.
+Used in conjunction with a POS system. Common examples: Mx830, Mx915, Mx925.
+Root Key would be used to update the PROV key should it be compromised.
+Common example: XEPH410
+Ingenico Telium 2 hardware platform brand name. Examples iPP320 and iCT250
+Page 24 of 32
+                     KIF
+   Key Injection Facility
+   Used interchangeably to describe the deployment/injection facility itself or the specific KIF cards/injection key.
+          PROV
+   Provisioner Key
+   Key used to encrypt and transmit the PAN encryption keys between the device and the decryption server during a key sync.
+          © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+
+Safetech Encryption
+   Acronym
+   Term
+   Detail
+   TGK
+  Terminal Generated Keys
+  TGK Process: Keys created at the device and sent to the host then passed to the decryption server.
+TGK Application: application running on the Vx device which creates the new keys.
+   VCL VFI
+VMB VMC
+Voltage
+VRK
+VSD
+VSP
+Vx Device
+XPI
+VeriShield Crypto-Library Verifone
+VeriShield Merchant Boarding
+VeriShield Monitoring and Compliance
+Voltage Encryption
+Verifone Remote Key
+VeriShield Decryption VeriShield Protect
+Stand alone countertop Terminal or PIN pad
+External PIN pad Interface (Vx)
+Encryption OS firmware which runs on the Mx or Vx device.
+Abbreviation for Verifone Inc.
+Web application used to import new Keys, board merchants from Tandem and export config packages Web application that provides reports of encrypting devices and transaction activity.
+Voltage is an encryption/tokenization brand and methodology.
+Verifone’s remote Key injection process capable of injecting keys to devices remotely – Debit and E2E.
+Generic name for the decryption server stack. – See DA The Verifone product brand name.
+Common examples: Vx520, Vx820 PP
+Application used on a PIN pad to communicate to a connected terminal (Vx520) or to a POS system.
+      VKM
+   VeriShield Key Management
+   Web application used to manage IP back channel devices. Turn off encryption, update BIN exclusions, and update keys.
+                      VxCI
+   Vx Contactless Interface
+   Application running on the Vx device which manages the contactless data received from the CTLS firmware and sends it to the SoftPay application.
+    © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 25 of 32
+
+Safetech Encryption
+ Appendix A – Verifone IPBC Kmailman Configuration
+  Example of a Kmailconfig File
+   Description
+   kserver1name=206.253.180.179 kserver1port=8443 kserver1useSSL=1 kserver1urlroot=/RKDS3Web.asmx checkmail_interval=900 wait_request=5
+wait_kmailout=30
+ssl_match_hostname=0
+ssl_check_dates=0
+ssl_allow_selfsigned=1
+ssl_depth=3 DOMAIN=GET_FROM_ENV_VALUE:*pos_dom MERCHANT=GET_FROM_ENV_VALUE:*pos_mer store=GET_FROM_ENV_VALUE:*pos_store terminal=GET_FROM_ENV_VALUE:*pos_lane device=GET_FROM_ENV_VALUE:*pos_dev
+  kserver1name – The IP Address of the Chase Decryption Server
+kserver1port – The port number of the Chase Decryption Server
+kserver1useSSL – Enable or disable SSL.
+kserver1urlroot – Web Services page being accessed on the Chase Decryption Server checkmail_interval – Frequency of the Kmailman check in seconds
+wait_request – Seconds before network connection time out
+wait_kmailout – Seconds before server response time out
+ssl_match_hostname – Validate the URL matches the SSL certificate value ssl_check_dates – Validate the server SSL certificate date value ssl_allow_selfsigned – Allow SSL certs not signed by a 3rd party Root CA (i.e. verisign) ssl_depth – Max number of intermediate cert issuers
+DOMAIN – Environment variable Domain
+MERCHANT – Environment variable Merchant ID
+store – Environment variable Store ID (Bank or PNS MID)
+terminal – Environment variable Lane ID (PNS TID)
+device – Environment variable Device ID (either pump/device ID field or wildcard [ * ]
+ Appendix B – Verifone Hierarchy Environment Variables
+  Variable
+   API Variable
+   Description
+   Example
+   Auth Message Value
+ Domain *pos_dom Domain is assigned from the Client/Div during boarding and E2E enablement.
+Store *pos_store The PNS Merchant ID from Tandem is often used. However, the Bank MID could be used.
+VAR1_0002_VFMXE N/A
+700000001234 N/A
+   Merchant
+   *pos_mer
+  This is the PNS Merchant ID from Tandem
+   700000001234
+    PNS MID
+700000001234
+    Terminal
+   *pos_lane
+  This is the PNS Terminal ID from Tandem which needs to include a prefixed 0 to the three digit TID. Also called the Lane.
+   0001
+    PNS TID
+001
+   Device
+  *pos_dev
+ This is a value for the actual device. In a controller environment this is used similar to a Controller/Pump ID, though it is often not used. The default is *
+  *
+   N/A
+or Lane/Pump ID (4 digits)
+ © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 26 of 32
+
+Safetech Encryption
+ Appendix C – Verifone Semtek CDS Result Codes
+   Result Code
+1xx 2xx 3xx
+8xx 9XX
+Result Description
+Success result code. Unencrypted result code. Transaction Error result code.
+RSA Command result code.
+VSD Command result code.
+Notes
+The VeriShield Decryption Service perceived the data as encrypted, found keys, and decrypted the data.
+The transaction was not decrypted by the VSD because the source data was not encrypted as expected.
+The transaction was not decrypted by the VSD due to an error in the track data or missing lookup keys in the database.
+The transaction was processed as a RSA command The transaction was processed as a VSD command
+Notes / Resolution
+Indicates that the device generated Discretionary key was posted to the VSD database table
+A derived key device registered with VSD and enabled encryption
+A new BIN table record was added to the device’s configuration
+A BIN table record was deleted from the device’s configuration
+The BIN table configuration for a device was reset
+A derived key device rotated to a new DDK
+A device has received updated configuration settings
+A new device registered in place of another at an existing set of locator values
+A device was upgraded and is now using derived key with device unique keys
+VSD was unable to rotate to the next DDK for that device
+Registart
+A device failed to upgrade to derived key with unique keys for a device
+VSD was unable to switch to derived key with unique keys for a device
+A derived key device was unable to rotate to a new DDK BIN Replace Rejected by Device
+BIN Replace Unknown Server Failure
+Page 27 of 32
+                  VSD Command result Codes 9xx
+   Result Code
+904 905
+906 907
+908 909 910
+912
+913
+914
+915
+916
+919 920 921
+Result Description
+New Keys Posted
+Start Encryption Success (DK)
+Insert BIN Record Delete BIN Record
+Reset BIN Table Advance DDK Success Set terminal options
+Device Replacement Success Upgrade to Unique Key Success Advance DDK Fail Server
+Upgrade to Unique Key Fail Device
+Upgrade to Unique Key Fail Server
+Advance DDK Fail Device
+BIN Table Rejected By Device BIN Table Replace Server Error
+   901
+   Start Encryption Fail (DK) Server
+   Indicates VSD was unable to process a derived key registration command response received from the device Confirm VCL loaded, Retry,
+   902
+  Start Encryption Fail (SRED) Server
+  Indicates VSD was unable to process a derived key registration command response received from the device in SRED mode
+                   911
+    Exhaustive PAN Max Exceeded
+   The device exceeded the maximum allowed number of operations for a given time window Came with SRED module, indicates over 100 swipes in a 60 second period, used to indicate possible fraud. Client response is to wait 10- 20 seconds and retry.
+                           © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+
+Safetech Encryption
+ 922     BIN Table Replaced
+923     Settings Update Fail Device
+BIN Replace Success
+A derived key device failed to process a delivered settings file update
+VSD failed to apply the settings file updates that were successfully applied to the device
+A derived key device and VSD successfully applied a settings file update
+Encryption enabled on a device using Classic Mode firmware Encryption disabled on a device using Classic Mode firmware A device was unable to stop encryption
+A derived key device was unable to start encryption
+A derived key device registered with VSD and enabled encryption in SRED mode
+A derived key device was unable to start encryption in SRED mode
+VSD was unable to save the Device Generated keys delivered in multiple authorization calls
+VSD saved the first of 3 key components
+VSD saved the second of 3 key components
+VSD received the last of 3 key components
+A device BIN table was updated via TCP/IP
+VSD was unable to rotate to the next DDK for that device
+A new BIN Mask Range was created
+VSD was unable to start encryption for that device
+A device is reporting its status information A device enabled encryption
+A device disabled encryption
+Activate Via ECR
+A device replaced its PAN and DISC key
+A device completed key synchronization
+A derived key device registered successfully
+A device replaced its DISC key
+A device/terminal is reporting new locator information
+An eParms enabled device has not registered its serial number with VSD
+There is no PAN key associated with the Store
+A derived key device registered with VSD
+A derived key device rotated to a new DDK
+A settings update was successfully applied to a device A derived key device was unable to rotate to a new DDK
+Page 28 of 32
+  924     Settings Update 926     Settings Update
+931     Encryption Start
+932     Encryption Stop
+933     Stop Encryption
+934         Start Encryption
+935 Start Encryption (SRED)
+Fail Server Success
+Fail Fail
+Success
+          936 Start Encryption Device
+Fail (SRED) 940 Key Replace Failure – TGK
+      941     TGK – Transaction One
+942     TGK – Transaction Two
+943     TGK – Transaction Three
+944     Replace BIN Table Via TCP/IP
+948 TCP/IP Advance DDK Fail
+Server
+949     Create BIN Mask Range
+950 TCP/IP Register Derived Fail Server
+951     TCP/IP Get Status
+952     TCP/IP Start Encryption
+953     TCP/IP Stop Encryption
+954     Activate Via ECR
+956 TCP/IP Replace PAN and DISC
+Key
+957     TCP/IP Device Key Sync
+958     Register Device
+959     Replace Discretionary Key
+960     Terminal moved
+972 Missing Serial Number
+973     Missing Store PAN key
+974     TCP/IP Register Derived Key
+975     TCP/IP Advance DDK Success
+976     Settings Update Success
+977     TCP/IP Advance DDK Fail
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+                              
+Safetech Encryption
+ Device
+978     VCL Device Upgrade Success
+979 TCP/IP Settings Update Fail Device
+980     TCP/IP Error
+981 TCP/IP Settings Update Fail Server
+982     VCL Device Upgrade Fail Device
+983     VCL Device Upgrade Fail Server
+984 TCP/IP Derived Key Device
+Replaced
+985 TCP/IP Register Derived Key Fail Device
+A device was successfully upgraded
+A settings update could not be applied to a device
+An operation failed
+VSD was unable to process a device settings update
+A device was unable to process a device upgrade command VSD was unable to process a device upgrade
+A new device registered with VSD replacing an existing device in the same location
+A derived key device failed to process a register command
+A derived key device was unable to start encryption A derived key device was unable to stop encryption
+A derived key device registered with VSD and enabled encryption in SRED mode
+A derived key device was unable to start encryption in SRED mode
+A derived key device is reporting its status information VSD encountered an error processing the command
+VSD was unable to process a command response due to an unknown or incorrect function code
+VSD no longer supports the command response function A derived key device has been set to use a new DDK
+A derived key device was unable to set a new DDK
+VSD was unable to set a new DDK for that device
+                      986     TCP/IP Start Encryption
+987     TCP/IP Stop Encryption
+988 TCP/IP Start Encryption
+Success (SRED)
+989 TCP/IP Start Encryption (SRED)
+Fail Fail
+Fail
+        990     Get Status Derived Key
+991     Command Error
+992 Command Unknown Function
+993     Command Not Supported
+994     Set DDK Success
+995     Set DDK Fail Device
+996     Set DDK Fail Server
+         Success Codes 1xx Result Code
+Result Description
+Notes / Resolution No action needed
+No action needed No action needed No action needed No action needed No action needed No action needed No action needed No action needed
+Page 29 of 32
+      101
+102
+103
+104
+105
+106
+107
+108
+180
+Success with old key set (This reason code can only occur if eParms is being used)
+Success Track 1
+Success Track 2
+Success Manual PAN
+Success Track 1 and Track 2
+Success Track 1 and Manual PAN Success Track 2 and Manual PAN Success Not MIV validated
+Success (PKI decryption / tokenization)
+                           © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+
+Safetech Encryption
+    181 Success (PKI decryption / tokenization) – encryption key will expire soon
+182     Success (PKI decryption / tokenization) – encryption key has expired
+Unencrypted Transaction 2xx – transaction continued to process
+No action needed No action needed
+       Result Code
+201
+202
+203
+204
+205
+206
+207
+208
+211
+212
+298
+299
+Result Description
+Card data not encrypted
+Expiry date too high to encrypt Card is expired
+BIN Excluded from encryption Invalid Track 1
+Invalid Track 2
+Invalid PAN
+Invalid Expiration Date
+PAN Luhn failed Mod 10 Check PAN Too Short
+Unknown Multiple Tracks Unknown Reason – No Action
+Notes / Resolution
+Turn encryption on, registart device
+Ask for another card
+               Re-swipe, hand key or ask for another card Re-swipe, hand key or ask for another card Re-swipe, hand key or ask for another card Re-swipe, hand key or ask for another card Re-swipe, hand key or ask for another card Re-swipe, hand key or ask for another card Re-swipe, hand key or ask for another card
+                        Transaction Error 3xx – transaction did not process
+   Result Code
+301
+302
+303
+304
+305
+306
+307
+308
+309
+311 312 313
+Result Description
+Invalid Requestor Invalid Transaction ID Invalid Transaction Type Invalid Amount
+Invalid Domain Code Invalid Merchant Code Invalid Store Code Invalid Terminal Code Invalid Device Code
+Domain Code not found Merchant Code not found Store Code not found
+Notes / Resolution
+Setup Error, mis-match between Terminal and Host setups
+Escalate to Decryption host
+Transaction ID does not meet format requirements. Most likely this would be found during system testing.
+Transaction Type does not meet format requirements. Most likely this would be found during system testing.
+Amount input does not meet format requirements. Most likely this would be found during system testing.
+Setup Error, mis-match between Terminal and Host setups Setup Error, mis-match between Terminal and Host setups Setup Error, mis-match between Terminal and Host setups Setup Error, mis-match between Terminal and Host setups Setup Error, mis-match between Terminal and Host setups
+Setup Error, mis-match between Terminal and Host setups Setup Error, mis-match between Terminal and Host setups Setup Error, mis-match between Terminal and Host setups
+Page 30 of 32
+                              310
+   Missing Payment Card Data
+   Merchant should try reswiping, Ask for a different card, or Key in the data.
+If these actions do not work, then escalate
+          © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+
+Safetech Encryption
+    316     Device not added
+317     Missing PROV key
+318     Missing PAN or DISC key
+320 Encrypted PAN Mod 10 Failure
+321     Invalid eParms Data
+322     Key Service is Not Reachable
+323     Key Sync ID not found
+324 Missing eParms Data
+325 Missing MDK
+326     Missing Derivation Data
+328 MAC Error Track 1 PAN
+329 MAC Error Track 1 DISC
+330 MAC Error Track 2 PAN
+331 MAC Error Track 2 DISC
+332 MAC Error Manual PAN
+333 MIV Error Track 1 PAN
+334 MIV Error Track 2 PAN
+Setup Error, mis-match between Terminal and Host setups
+Dogwood Error - Key mis-match between Terminal and Host
+ELM Error - Key mis-match between Terminal and Host
+Merchant should ask for a different card, or Key in the data. If these actions do not work, then escalate
+E-Parms not being used, this response should not be seen Key mis-match between Terminal and Host
+Key not in Verifone Host
+Registart
+Missing data in Verifone Host
+Registart
+Key mis-match between Terminal and Host Registart
+Dogwood Error - during Decryption, errors are found
+Dogwood Activate
+Dogwood Error - during Decryption, errors are found
+Dogwood Activate
+Dogwood Error - during Decryption, errors are found
+Dogwood Activate
+Dogwood Error - during Decryption, errors are found
+Dogwood Activate
+Dogwood Error - during Decryption, errors are found
+Dogwood Activate
+ELM Error - during Decryption, errors are found
+Registart
+ELM Error - during Decryption, errors are found
+                 327
+  Derived Key Derivation Error
+   Could be one of two root causes:
+1) Missing data in Verifone Host - Could be cleared up by Registart
+OR
+2) Key Mis-match between Terminal and Host
+                   Registart
+   339     Virtual Device Conflict Detected
+380     RSA KeyID Not Found
+381     RSA Decryption Error
+382     RSA Invalid Blob
+383 RSA Configuration Name already exists
+384 RSA Configuration Name cannot be found
+385     RSA returned no data
+386 RSA - Locator does not support VTP
+© Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 31 of 32
+              
+Safetech Encryption
+    387 RSA Web Service Initialization Error
+388     RSA Token Creation Error
+389     RSA Tokenization Error
+390     RSA Detokenization Error
+391     RSA Result Ambiguous
+392 Invalid Parameter [Parameter
+Name]
+397     HSM Error
+398     Decryption Error Multiple Tracks
+399 Decryption Failure – Unknown
+Error
+RSA Command result codes 8xx
+Result Result Description Code
+801 RSA Key Generated Success
+802 RSA Key Provided Success
+803 RSA Certificate Error
+804 RSA Deactivate Key Success
+805 RSA Deactivate Key Error
+806 RSA Revoke Certificate Error
+807 RSA Key Pair Generation Error
+808 RSA Create Configuration Success
+810 RSA Certificate Generation Error
+811 RSA Issue Certificate Error
+812 RSA Store Certificate Error
+813 RSA Unable to Get Key ID
+814 RSA Unable to Create Token Type
+A mis-match in the Terimal vs. Host Setup
+HSM communication error
+Notes / Resolution
+          393
+   Host Access Denied – [Host Address]
+   ELM has the capability to restrict traffic by IPs if needed (ex. block Fraud)
+This indicates the transaction came from a blocked IP, could indicate VSP setup issue if the IP is valid
+                                                   © Paymentech, LLC. 2018 – All Rights Reserved November 13, 2018
+Page 32 of 32
